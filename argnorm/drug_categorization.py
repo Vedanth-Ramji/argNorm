@@ -16,35 +16,48 @@ def confers_resistance_to(aro_num: str) -> List[str]:
             A list with ARO number of the drugs/antibiotics to which the input gene confers resistance to.
     '''
 
-    # Some databases don't provide aro numbers as strings.
-    # Converting those aro numbers to pronto's desired format.
+    if aro_num not in ARO.terms():
+        return []
+    
     if type(aro_num) == float or type(aro_num) == int:
         aro_num = 'ARO:' + str(aro_num)
 
-    # If dealing with aro nans, the final drug class categorization will give [].
-    # Hence, immediate drug classes categorization also gives empty list.
-    if aro_num == 'ARO:nan':
-        return []
-
-    # Returning empty list if aro number not in ARO ontology.
-    if aro_num not in ARO.terms():
-        return []
-
+    drugs_list = []
+    found_drugs_list = False
     gene = ARO[aro_num]
 
     confers_resistance_to_drug_class = any(r.name == 'confers_resistance_to_drug_class' for r in gene.relationships)
     confers_resistance_to_antibiotic = any(r.name == 'confers_resistance_to_antibiotic' for r in gene.relationships)
 
-    drugs_list = []
-
     if confers_resistance_to_drug_class:
+        found_drugs_list = True
         for drug in gene.relationships[ARO.get_relationship('confers_resistance_to_drug_class')]:
             drugs_list.append(drug.id)
 
     if confers_resistance_to_antibiotic:
+        found_drugs_list = True
         for drug in gene.relationships[ARO.get_relationship('confers_resistance_to_antibiotic')]:
             drugs_list.append(drug.id)
 
+    while not found_drugs_list:
+        gene = list(gene.superclasses(1))[1]
+
+        confers_resistance_to_drug_class = any(r.name == 'confers_resistance_to_drug_class' for r in gene.relationships)
+        confers_resistance_to_antibiotic = any(r.name == 'confers_resistance_to_antibiotic' for r in gene.relationships)
+
+        if confers_resistance_to_drug_class:
+            found_drugs_list = True
+            for drug in gene.relationships[ARO.get_relationship('confers_resistance_to_drug_class')]:
+                drugs_list.append(drug.id)
+
+        if confers_resistance_to_antibiotic:
+            found_drugs_list = True
+            for drug in gene.relationships[ARO.get_relationship('confers_resistance_to_antibiotic')]:
+                drugs_list.append(drug.id)
+
+        if gene.id == 'ARO:1000001':
+            break
+    
     return sorted(drugs_list)
 
 def drugs_to_drug_classes(drugs_list: List[str]) -> List[str]:
@@ -74,3 +87,5 @@ def drugs_to_drug_classes(drugs_list: List[str]) -> List[str]:
             drug_classes.append(drug_instance_superclasses[0].id)
 
     return sorted(drug_classes)
+
+confers_resistance_to('ARO:3003725')

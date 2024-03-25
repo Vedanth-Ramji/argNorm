@@ -45,11 +45,9 @@ def get_aro_for_hits(fa, rgi_output, database):
     mapping = rgi_hits[['Original ID', "Best_Hit_ARO", 'ARO']]
     mapping = mapping.astype({'ARO': 'str'})
     mapping = mapping.rename(columns={'Best_Hit_ARO': 'Gene Name in CARD'})
-    print(mapping)
 
     database_entries = pd.Series(list(database_entries))
     database_entries.name = "Original ID"
-    print(database_entries)
     mapping = pd.merge(database_entries, mapping, how='outer')
     mapping['Database'] = database
 
